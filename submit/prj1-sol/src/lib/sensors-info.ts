@@ -23,12 +23,14 @@ export class SensorsInfo {
     this.sensorType = {};
     this.sensorReading = {};
     this.sensor = {};
-    //TODO
   }
 
   /** Clear out all sensors info from this object.  Return empty array */
   clear() : Errors.Result<string[]> {
-    //TODO
+    this.sensorType = {};
+    this.sensorReading = {};
+    this.sensor = {};
+
     return Errors.okResult([]);
   }
 
@@ -45,7 +47,6 @@ export class SensorsInfo {
     const sensorTypeResult = makeSensorType(req);
     if (!sensorTypeResult.isOk) return sensorTypeResult;
     const sensorType = sensorTypeResult.val;
-    //TODO add into this
     this.sensorType[sensorType.id] = sensorType;
     return Errors.okResult([sensorType]);
   }
@@ -61,14 +62,12 @@ export class SensorsInfo {
    *     'BAD_ID': unknown sensorTypeId.
    */
   addSensor(req: Record<string, string>): Errors.Result<Sensor[]> {
-    //TODO
     const sensorResult = makeSensor(req);
     if(!sensorResult.isOk) return sensorResult;
     const sensor = sensorResult.val;
     this.sensor[sensor.id] = sensor;
-
-    
-    if(findKeyInDictionary(this.sensorType, sensor.sensorTypeId) === false){
+    const sensorTypeFilterResult = this.findSensorTypes({id:sensor.sensorTypeId})
+    if(sensorTypeFilterResult.isOk && sensorTypeFilterResult.val.length === 0){
       const msg = `unknown sensor type ${sensor.sensorTypeId}`;
       return Errors.errResult(msg,"BAD_ID");
     }else{
@@ -93,11 +92,11 @@ export class SensorsInfo {
   addSensorReading(req: Record<string, string>)
     : Errors.Result<SensorReading[]> 
   {
-    //TODO
     const sensorReadingResult = makeSensorReading(req);
     if(!sensorReadingResult.isOk) return sensorReadingResult;
     const sensorReading = sensorReadingResult.val;
-    if(findKeyInDictionary(this.sensor, sensorReading.sensorId) === false){
+    const sensorFilterResult = this.findSensors({id:sensorReading.sensorId})
+    if(sensorFilterResult.isOk && sensorFilterResult.val.length === 0){
       const msg = `unknown sensor ${sensorReading.sensorId}`;
       return Errors.errResult(msg,"BAD_ID");
     }else{
@@ -112,7 +111,6 @@ export class SensorsInfo {
           this.sensorReading[sensorReading.sensorId].push(sensorReading);
         }
     }
-    /////
     return Errors.okResult([sensorReading]);
   }
 
@@ -269,25 +267,5 @@ export function addSensorsInfo(sensorTypes: FlatReq[], sensors: FlatReq[],
 /****************************** Utilities ******************************/
 
 //TODO add any utility functions or classes
-export function findKeyInDictionary<T>(dictionary : Dict<T>, key : String) : boolean {
 
-  for(const keys in dictionary){
-    if(keys === key){
-      return true;
-    }
-  }
-  return false;
-}
 
-export function filterInList<T>(dictionary : Dict<T>, filteringParams : Checked<Checkers.FlatReq>) : Errors.Result<T[]> {
-  
-  for(const dicKey in dictionary){
-    for(const filtkeys in filteringParams){
-      if(dicKey === filtkeys){
-        
-      }
-    }
-  }
-
-  return Errors.okResult([]);
-}
