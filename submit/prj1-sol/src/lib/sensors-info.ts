@@ -69,11 +69,11 @@ export class SensorsInfo {
 
     
     if(findKeyInDictionary(this.sensorType, sensor.sensorTypeId) === false){
-      const msg = `unknown sensor type ${sensor.id}`;
+      const msg = `unknown sensor type ${sensor.sensorTypeId}`;
       return Errors.errResult(msg,"BAD_ID");
     }else{
         if(sensor.expected.isSubrange(this.sensorType[sensor.sensorTypeId].limits) === false){
-          const msg = `expected range inconsistent with sensor-type ${sensor.id}`;
+          const msg = `expected range  [${sensor.expected.min}, ${sensor.expected.max}] of sensor  ${sensor.id} is not within the limits [${this.sensorType[sensor.sensorTypeId].limits.min}, ${this.sensorType[sensor.sensorTypeId].limits.max}] of sensor-type ${sensor.sensorTypeId}`;
           return Errors.errResult(msg,"BAD_RANGE");
         }
     }
@@ -113,7 +113,7 @@ export class SensorsInfo {
         }
     }
     /////
-    return Errors.okResult([...this.sensorReading[sensorReading.sensorId]]);
+    return Errors.okResult([sensorReading]);
   }
 
   /** Find sensor-types which satify req. Returns [] if none. 
@@ -125,7 +125,7 @@ export class SensorsInfo {
       validateFindCommand('findSensorTypes', req);
     if (!validResult.isOk) return validResult;
     if(Object.keys(validResult.val).length === 0){
-      return Errors.okResult([...Object.values(this.sensorType)]);
+      return Errors.okResult([...Object.values(this.sensorType).sort((a,b) => a.id.localeCompare(b.id))]);
     }
     let filteredSensorsTypes :SensorType[] = [];
     for(const [sensorId,sensorTypeObj] of Object.entries(this.sensorType)){
@@ -151,7 +151,7 @@ export class SensorsInfo {
      if(conditionMet){
       filteredSensorsTypes.push(sensorTypeObj);
      }
-     
+     filteredSensorsTypes.sort((a,b) => a.id.localeCompare(b.id));
     }    
     return Errors.okResult([...filteredSensorsTypes]);
   }
@@ -165,7 +165,7 @@ export class SensorsInfo {
       validateFindCommand('findSensors', req);
     if (!validResult.isOk) return validResult;
     if(Object.keys(validResult.val).length === 0){
-      return Errors.okResult([...Object.values(this.sensor)]);
+      return Errors.okResult([...Object.values(this.sensor).sort((a,b) => a.id.localeCompare(b.id))]);
     }
     let filteredSensors :Sensor[] = [];
     for(const [sensorId,sensorObj] of Object.entries(this.sensor)){
@@ -191,7 +191,7 @@ export class SensorsInfo {
      if(conditionMet){
       filteredSensors.push(sensorObj);
      }
-     
+     filteredSensors.sort((a,b) => a.id.localeCompare(b.id));
     }
     return Errors.okResult([...filteredSensors]);
   }
@@ -223,7 +223,9 @@ export class SensorsInfo {
       }else if(key === "maxTimestamp"){
         filteredSensorReadings = filteredSensorReadings.filter((x) => x.timestamp <= Number(value))
       }
+      
     }
+    filteredSensorReadings.sort((a,b) => a.timestamp-b.timestamp);
     return Errors.okResult([...filteredSensorReadings]);
   }
   
