@@ -68,7 +68,7 @@ export class SensorsInfo {
     this.sensor[sensor.id] = sensor;
     const sensorTypeFilterResult = this.findSensorTypes({id:sensor.sensorTypeId})
     if(sensorTypeFilterResult.isOk && sensorTypeFilterResult.val.length === 0){
-      const msg = `unknown sensor type ${sensor.sensorTypeId}`;
+      const msg = `unknown sensor type "${sensor.sensorTypeId}"`;
       return Errors.errResult(msg,"BAD_ID");
     }else{
         if(sensor.expected.isSubrange(this.sensorType[sensor.sensorTypeId].limits) === false){
