@@ -7,6 +7,7 @@ type FlatReq = Checkers.FlatReq; //dictionary mapping strings to strings
 
 //marks T as having being run through validate()
 type Checked<T> = Checkers.Checked<T>;
+type Dict<T> = { [key: string]: T };
 
 /*********************** Top Level Sensors Info ************************/
 
@@ -14,8 +15,14 @@ export class SensorsInfo {
 
   //TODO: define instance fields; good idea to keep private and
   //readonly when possible.
-
+  private sensorType : Dict<SensorType>;
+  private sensorReading : Dict<SensorReading[]>;
+  private sensor : Dict<Sensor>;
+  
   constructor() {
+    this.sensorType = {};
+    this.sensorReading = {};
+    this.sensor = {};
     //TODO
   }
 
@@ -39,6 +46,7 @@ export class SensorsInfo {
     if (!sensorTypeResult.isOk) return sensorTypeResult;
     const sensorType = sensorTypeResult.val;
     //TODO add into this
+    this.sensorType[sensorType.id] = sensorType;
     return Errors.okResult([sensorType]);
   }
   
@@ -54,7 +62,22 @@ export class SensorsInfo {
    */
   addSensor(req: Record<string, string>): Errors.Result<Sensor[]> {
     //TODO
-    return Errors.okResult([]);
+    const sensorResult = makeSensor(req);
+    if(!sensorResult.isOk) return sensorResult;
+    const sensor = sensorResult.val;
+    this.sensor[sensor.id] = sensor;
+
+    
+    if(findKeyInDictionary(this.sensorType, sensor.sensorTypeId) === false){
+      const msg = `unknown sensor type ${sensor.id}`;
+      return Errors.errResult(msg,"BAD_ID");
+    }else{
+        if(sensor.expected.isSubrange(this.sensorType[sensor.sensorTypeId].limits) === false){
+          const msg = `expected range inconsistent with sensor-type ${sensor.id}`;
+          return Errors.errResult(msg,"BAD_RANGE");
+        }
+    }
+    return Errors.okResult([sensor]);
   }
 
   /** Add sensor reading defined by req to this.  If there is already
@@ -71,7 +94,26 @@ export class SensorsInfo {
     : Errors.Result<SensorReading[]> 
   {
     //TODO
-    return Errors.okResult([]);
+    const sensorReadingResult = makeSensorReading(req);
+    if(!sensorReadingResult.isOk) return sensorReadingResult;
+    const sensorReading = sensorReadingResult.val;
+    if(findKeyInDictionary(this.sensor, sensorReading.sensorId) === false){
+      const msg = `unknown sensor ${sensorReading.sensorId}`;
+      return Errors.errResult(msg,"BAD_ID");
+    }else{
+        if(!this.sensorReading[sensorReading.sensorId]){
+          this.sensorReading[sensorReading.sensorId] = [];
+        }
+        let index = this.sensorReading[sensorReading.sensorId].findIndex(x=> x.timestamp === sensorReading.timestamp);
+
+        if(index>-1){
+          this.sensorReading[sensorReading.sensorId][index].value = sensorReading.value;
+        }else{
+          this.sensorReading[sensorReading.sensorId].push(sensorReading);
+        }
+    }
+    /////
+    return Errors.okResult([...this.sensorReading[sensorReading.sensorId]]);
   }
 
   /** Find sensor-types which satify req. Returns [] if none. 
@@ -82,8 +124,36 @@ export class SensorsInfo {
     const validResult: Errors.Result<Checked<FlatReq>> =
       validateFindCommand('findSensorTypes', req);
     if (!validResult.isOk) return validResult;
-    //TODO
-    return Errors.okResult([]);
+    if(Object.keys(validResult.val).length === 0){
+      return Errors.okResult([...Object.values(this.sensorType)]);
+    }
+    let filteredSensorsTypes :SensorType[] = [];
+    for(const [sensorId,sensorTypeObj] of Object.entries(this.sensorType)){
+      let conditionMet : Boolean = false;
+      for(const [entities, values]  of Object.entries(sensorTypeObj)){
+        let breakLoop: Boolean = false;
+        for(const [rqkey,rqvalue] of Object.entries(validResult.val)){
+          if(entities === rqkey){
+              if(rqvalue === values){
+                conditionMet = true;
+              }
+              else{
+                conditionMet = false;
+                breakLoop = true;
+                break;
+              }
+          }
+        }
+        if(breakLoop){
+          break;
+        }
+     }
+     if(conditionMet){
+      filteredSensorsTypes.push(sensorTypeObj);
+     }
+     
+    }    
+    return Errors.okResult([...filteredSensorsTypes]);
   }
   
   /** Find sensors which satify req. Returns [] if none. 
@@ -91,8 +161,39 @@ export class SensorsInfo {
    *  The returned array must be sorted by sensor id.
    */
   findSensors(req: FlatReq) : Errors.Result<Sensor[]> { 
-    //TODO
-    return Errors.okResult([]);
+    const validResult: Errors.Result<Checked<FlatReq>> =
+      validateFindCommand('findSensors', req);
+    if (!validResult.isOk) return validResult;
+    if(Object.keys(validResult.val).length === 0){
+      return Errors.okResult([...Object.values(this.sensor)]);
+    }
+    let filteredSensors :Sensor[] = [];
+    for(const [sensorId,sensorObj] of Object.entries(this.sensor)){
+      let conditionMet : Boolean = false;
+      for(const [entities, values]  of Object.entries(sensorObj)){
+        let breakLoop: Boolean = false;
+        for(const [rqkey,rqvalue] of Object.entries(validResult.val)){
+          if(entities === rqkey){
+              if(rqvalue === values){
+                conditionMet = true;
+              }
+              else{
+                conditionMet = false;
+                breakLoop = true;
+                break;
+              }
+          }
+        }
+        if(breakLoop){
+          break;
+        }
+     }
+     if(conditionMet){
+      filteredSensors.push(sensorObj);
+     }
+     
+    }
+    return Errors.okResult([...filteredSensors]);
   }
   
   /** Find sensor readings which satify req. Returns [] if none.  Note
@@ -104,8 +205,26 @@ export class SensorsInfo {
    *  The returned array must be sorted numerically by timestamp.
    */
   findSensorReadings(req: FlatReq) : Errors.Result<SensorReading[]> {
-    //TODO
-    return Errors.okResult([]);
+    const validResult: Errors.Result<Checked<FlatReq>> =
+    validateFindCommand('findSensorReadings', req);
+    if (!validResult.isOk) return validResult;
+    let filteredSensorReadings :SensorReading[] = [];
+    const sensorId = validResult.val["sensorId"];
+    filteredSensorReadings = this.sensorReading[sensorId];
+    for(const[key,value] of Object.entries(validResult.val)){
+      if(key === "sensorId"){
+        continue;
+      }else if(key === "minValue"){
+        filteredSensorReadings = filteredSensorReadings.filter((x) => x.value >= Number(value))
+      }else if(key === "maxValue"){
+        filteredSensorReadings = filteredSensorReadings.filter((x) => x.value <= Number(value))
+      }else if(key === "minTimestamp"){
+        filteredSensorReadings = filteredSensorReadings.filter((x) => x.timestamp >= Number(value))
+      }else if(key === "maxTimestamp"){
+        filteredSensorReadings = filteredSensorReadings.filter((x) => x.timestamp <= Number(value))
+      }
+    }
+    return Errors.okResult([...filteredSensorReadings]);
   }
   
 }
@@ -148,3 +267,25 @@ export function addSensorsInfo(sensorTypes: FlatReq[], sensors: FlatReq[],
 /****************************** Utilities ******************************/
 
 //TODO add any utility functions or classes
+export function findKeyInDictionary<T>(dictionary : Dict<T>, key : String) : boolean {
+
+  for(const keys in dictionary){
+    if(keys === key){
+      return true;
+    }
+  }
+  return false;
+}
+
+export function filterInList<T>(dictionary : Dict<T>, filteringParams : Checked<Checkers.FlatReq>) : Errors.Result<T[]> {
+  
+  for(const dicKey in dictionary){
+    for(const filtkeys in filteringParams){
+      if(dicKey === filtkeys){
+        
+      }
+    }
+  }
+
+  return Errors.okResult([]);
+}
