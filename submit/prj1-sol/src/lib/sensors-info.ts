@@ -72,7 +72,7 @@ export class SensorsInfo {
       return Errors.errResult(msg,"BAD_ID");
     }else{
         if(sensor.expected.isSubrange(this.sensorType[sensor.sensorTypeId].limits) === false){
-          const msg = `expected range  [${sensor.expected.min}, ${sensor.expected.max}] of sensor  ${sensor.id} is not within the limits [${this.sensorType[sensor.sensorTypeId].limits.min}, ${this.sensorType[sensor.sensorTypeId].limits.max}] of sensor-type ${sensor.sensorTypeId}`;
+          const msg = `expected range  [${sensor.expected.min}, ${sensor.expected.max}] of sensor  "${sensor.id}" is not within the limits [${this.sensorType[sensor.sensorTypeId].limits.min}, ${this.sensorType[sensor.sensorTypeId].limits.max}] of sensor-type "${sensor.sensorTypeId}"`;
           return Errors.errResult(msg,"BAD_RANGE");
         }
     }
@@ -97,7 +97,7 @@ export class SensorsInfo {
     const sensorReading = sensorReadingResult.val;
     const sensorFilterResult = this.findSensors({id:sensorReading.sensorId})
     if(sensorFilterResult.isOk && sensorFilterResult.val.length === 0){
-      const msg = `unknown sensor ${sensorReading.sensorId}`;
+      const msg = `unknown sensor "${sensorReading.sensorId}"`;
       return Errors.errResult(msg,"BAD_ID");
     }else{
         if(!this.sensorReading[sensorReading.sensorId]){
