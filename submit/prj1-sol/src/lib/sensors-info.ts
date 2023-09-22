@@ -229,6 +229,7 @@ export class SensorsInfo {
   
 }
 
+
 /*********************** SensorsInfo Factory Functions *****************/
 
 export function makeSensorsInfo(sensorTypes: FlatReq[]=[],
