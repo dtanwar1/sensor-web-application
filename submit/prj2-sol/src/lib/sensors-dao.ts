@@ -62,7 +62,13 @@ export class SensorsDao {
    *    DB: a database error was encountered.
    */
   async close() : Promise<Errors.Result<void>> {
-    return Errors.errResult('todo', 'TODO');
+    try {
+      await this.client.close();
+      return Errors.VOID_RESULT;
+    }
+    catch (error) {
+      return Errors.errResult(error.message, 'DB');
+    }
   }
 
   /** Clear out all sensor info in this database
@@ -70,7 +76,15 @@ export class SensorsDao {
    *    DB: a database error was encountered.
    */
   async clear() : Promise<Errors.Result<void>> {
-    return Errors.errResult('todo', 'TODO');
+    try {
+      await this.sensorType.deleteMany({});
+      await this.sensor.deleteMany({});
+      await this.sensorReading.deleteMany({});
+      return Errors.VOID_RESULT;
+    }
+    catch (e) {
+      return Errors.errResult(e.message, 'DB');
+    }
   }
 
 
