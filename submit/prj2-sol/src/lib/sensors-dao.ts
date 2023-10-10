@@ -109,7 +109,6 @@ export class SensorsDao {
       }
     }
     return Errors.okResult(sensorType);
-    //return Errors.errResult('todo', 'TODO');
   }
 
   /** Add sensor to this database.
@@ -118,7 +117,6 @@ export class SensorsDao {
    *    DB: a database error was encountered.
    */
   async addSensor(sensor: Sensor) : Promise<Errors.Result<Sensor>> {
-    
     const sensorObj = {...sensor, _id: sensor.id};
     const sensorCollection = this.sensor;
     try {
@@ -130,7 +128,6 @@ export class SensorsDao {
         return Errors.errResult(error.message, 'DB');
       }
     }
-    
     return Errors.okResult(sensor);
   }
 
@@ -166,7 +163,6 @@ export class SensorsDao {
   async findSensorTypes(search: SensorTypeSearch)
     : Promise<Errors.Result<SensorType[]>> 
   {
-    
     const query: { [key: string]: string } = {};
     for (const [k, v] of Object.entries(search)) {
 	      if (v !== undefined) query[k] = v;
