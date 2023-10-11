@@ -145,7 +145,7 @@ export class SensorsDao {
       await sensorReadingCollection.insertOne(sensorReadingObj);  
     } catch (error) {
       if(error.code === MONGO_DUPLICATE_CODE){
-        return Errors.errResult(error.message, 'EXISTS');
+        return Errors.errResult(`duplicate sensorReading  {"sensorId":${sensorReading.sensorId},"timestamp":${sensorReading.timestamp},"value":${sensorReading.value}}`, 'EXISTS');
       }else{
         return Errors.errResult(error.message, 'DB');
       }
@@ -197,7 +197,7 @@ export class SensorsDao {
       const sensorCollection = this.sensor;
       const projection = { _id: false };
       const cursor = await sensorCollection.find(query, {projection});
-      const entries = await cursor.sort({sensorTypeId: 1}).toArray();
+      const entries = await cursor.sort({id: 1}).toArray();
       return Errors.okResult(entries);
 
     }catch(error){
