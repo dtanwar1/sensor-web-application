@@ -57,6 +57,14 @@ function setupRoutes(app: Express.Application) {
   //app.use(doTrace(app));
 
   //TODO: add routes
+  app.put(`${base}/sensor-types`, doCreateSensorTypes(app));
+  app.get(`${base}/sensor-types/:id`, doGetSensorTypes(app));
+  app.get(`${base}/sensor-types`, doFindSensorTypes(app));
+  app.put(`${base}/sensors`, doCreateSensor(app));
+  app.get(`${base}/sensors/:id`, doGetSensor(app));
+  app.get(`${base}/sensors`, doFindSensor(app));
+  app.put(`${base}/sensor-readings`, doCreateSensorReading(app));
+  app.get(`${base}/sensor-readings`, doFindSensorReading(app));
 
   //must be last
   app.use(do404(app));  //custom handler for page not found
@@ -64,6 +72,169 @@ function setupRoutes(app: Express.Application) {
 }
 
 // TODO: add route handlers 
+
+function doCreateSensorTypes(app: Express.Application ){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const result =await app.locals.sensorsInfo.addSensorType(req.body);
+      if(!result.isOk) throw result;
+      const sensorTypeCreated = result.val;
+      const { id } = sensorTypeCreated;
+      res.location(selfHref(req, id));
+      const response =
+	    selfResult<SensorType>(req, sensorTypeCreated, STATUS.CREATED);
+      res.status(STATUS.CREATED).json(response);
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doGetSensorTypes(app: Express.Application){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const result =await app.locals.sensorsInfo.findSensorTypes({id :req.params.id});
+      if(!result.isOk) throw result;
+      if(result.val.length > 0){
+        const response = selfResult<SensorType>(req, result.val[0]);
+        res.json(response);
+      }else{
+        const message = "not found";
+        const result = {
+          status: STATUS.NOT_FOUND,
+          errors: [	{ options: { code: 'NOT_FOUND' }, message, }, ],
+        };
+        res.status(404).json(result);
+      }
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doFindSensorTypes(app: Express.Application){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const query = {...req.query, count : Number (req.query.count ?? DEFAULT_COUNT) +1 ,index : Number(req.query.index ?? DEFAULT_INDEX)};
+      const result = await app.locals.sensorsInfo.findSensorTypes(query);
+      if (!result.isOk) throw result;
+      const response = pagedResult<SensorType>(req, 'id', result.val);
+      res.json(response);
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doCreateSensor(app: Express.Application ){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const result =await app.locals.sensorsInfo.addSensor(req.body);
+      if(!result.isOk) throw result;
+      const sensorTypeCreated = result.val;
+      const { id } = sensorTypeCreated;
+      res.location(selfHref(req, id));
+      const response =
+	    selfResult<Sensor>(req, sensorTypeCreated, STATUS.CREATED);
+      res.status(STATUS.CREATED).json(response);
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doGetSensor(app: Express.Application){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {   
+      const result =await app.locals.sensorsInfo.findSensors({id :req.params.id});
+      if(!result.isOk) throw result;
+      if(result.val.length > 0){
+        const response = selfResult<Sensor>(req, result.val[0]);
+        res.json(response);
+      }else{
+        const message = "not found";
+        const result = {
+          isOk : false,
+          status: STATUS.NOT_FOUND,
+          errors: [	{ options: { code: 'NOT_FOUND' }, message, }, ],
+        };
+        res.status(404).json(result);
+
+      }
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doFindSensor(app: Express.Application){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const query = {...req.query, count : Number (req.query.count ?? DEFAULT_COUNT) +1 ,index : Number(req.query.index ?? DEFAULT_INDEX)};
+      const result = await app.locals.sensorsInfo.findSensors(query);
+      if (!result.isOk) throw result;
+      const response = pagedResult<Sensor>(req, 'id', result.val);
+      res.json(response);
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doCreateSensorReading(app: Express.Application ){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const result =await app.locals.sensorsInfo.addSensorReading(req.body);
+      if(!result.isOk) throw result;
+      const sensorTypeCreated = result.val;
+      const { sensorId } = sensorTypeCreated;
+      res.location(selfHref(req, sensorId));
+      const response =
+	    selfResult<SensorReading>(req, sensorTypeCreated, STATUS.CREATED);
+      res.status(STATUS.CREATED).json(response);
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
+
+function doFindSensorReading(app: Express.Application){
+  return (async function(req: Express.Request, res: Express.Response) {
+    try {     
+      const query = {...req.query, count : Number (req.query.count ?? DEFAULT_COUNT) +1 ,index : Number(req.query.index ?? DEFAULT_INDEX)};
+      const result = await app.locals.sensorsInfo.findSensorReadings(query);
+      if (!result.isOk) throw result;
+      const response = pagedResult<SensorReading>(req, 'sensorId', result.val);
+      res.json(response);
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+
+}
 
 function doTrace(app: Express.Application) {
   return (async function(req: Express.Request, res: Express.Response, 
