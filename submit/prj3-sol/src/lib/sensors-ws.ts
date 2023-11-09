@@ -5,13 +5,14 @@ import assert from 'assert';
 import STATUS from 'http-status';
 
 import { SensorsInfo } from './sensors-info.js';
-import { SensorType, Sensor, SensorReading } from './validators.js';
+import { SensorType, Sensor, SensorReading, SensorReadingSearch } from './validators.js';
 import { Errors } from 'cs544-js-utils';
 import { DEFAULT_INDEX, DEFAULT_COUNT } from './params.js';
 
 import { Link, SelfLinks, NavLinks,
 	 SuccessEnvelope, PagedEnvelope, ErrorEnvelope }
   from './response-envelopes.js';
+import { FlatReq } from 'cs544-js-utils/dist/lib/checkers.js';
 
 
 //Based on 
@@ -76,9 +77,9 @@ function setupRoutes(app: Express.Application) {
 function doCreateSensorTypes(app: Express.Application ){
   return (async function(req: Express.Request, res: Express.Response) {
     try {     
-      const result =await app.locals.sensorsInfo.addSensorType(req.body);
-      if(!result.isOk) throw result;
-      const sensorTypeCreated = result.val;
+      const resultSensorType =await app.locals.sensorsInfo.addSensorType(req.body);
+      if(!resultSensorType.isOk) throw resultSensorType;
+      const sensorTypeCreated = resultSensorType.val;
       const { id } = sensorTypeCreated;
       res.location(selfHref(req, id));
       const response =
@@ -96,10 +97,10 @@ function doCreateSensorTypes(app: Express.Application ){
 function doGetSensorTypes(app: Express.Application){
   return (async function(req: Express.Request, res: Express.Response) {
     try {     
-      const result =await app.locals.sensorsInfo.findSensorTypes({id :req.params.id});
-      if(!result.isOk) throw result;
-      if(result.val.length > 0){
-        const response = selfResult<SensorType>(req, result.val[0]);
+      const resultFindSensor =await app.locals.sensorsInfo.findSensorTypes({id :req.params.id});
+      if(!resultFindSensor.isOk) throw resultFindSensor;
+      if(resultFindSensor.val.length > 0){
+        const response = selfResult<SensorType>(req, resultFindSensor.val[0]);
         res.json(response);
       }else{
         const message = "not found";
@@ -122,9 +123,9 @@ function doFindSensorTypes(app: Express.Application){
   return (async function(req: Express.Request, res: Express.Response) {
     try {     
       const query = {...req.query, count : Number (req.query.count ?? DEFAULT_COUNT) +1 ,index : Number(req.query.index ?? DEFAULT_INDEX)};
-      const result = await app.locals.sensorsInfo.findSensorTypes(query);
-      if (!result.isOk) throw result;
-      const response = pagedResult<SensorType>(req, 'id', result.val);
+      const resultFindSensorType = await app.locals.sensorsInfo.findSensorTypes(query);
+      if (!resultFindSensorType.isOk) throw resultFindSensorType;
+      const response = pagedResult<SensorType>(req, 'id', resultFindSensorType.val);
       res.json(response);
     }
     catch(err){
@@ -138,9 +139,9 @@ function doFindSensorTypes(app: Express.Application){
 function doCreateSensor(app: Express.Application ){
   return (async function(req: Express.Request, res: Express.Response) {
     try {     
-      const result =await app.locals.sensorsInfo.addSensor(req.body);
-      if(!result.isOk) throw result;
-      const sensorTypeCreated = result.val;
+      const resultAddSensor =await app.locals.sensorsInfo.addSensor(req.body);
+      if(!resultAddSensor.isOk) throw resultAddSensor;
+      const sensorTypeCreated = resultAddSensor.val;
       const { id } = sensorTypeCreated;
       res.location(selfHref(req, id));
       const response =
@@ -158,10 +159,10 @@ function doCreateSensor(app: Express.Application ){
 function doGetSensor(app: Express.Application){
   return (async function(req: Express.Request, res: Express.Response) {
     try {   
-      const result =await app.locals.sensorsInfo.findSensors({id :req.params.id});
-      if(!result.isOk) throw result;
-      if(result.val.length > 0){
-        const response = selfResult<Sensor>(req, result.val[0]);
+      const resultFindSensor =await app.locals.sensorsInfo.findSensors({id :req.params.id});
+      if(!resultFindSensor.isOk) throw resultFindSensor;
+      if(resultFindSensor.val.length > 0){
+        const response = selfResult<Sensor>(req, resultFindSensor.val[0]);
         res.json(response);
       }else{
         const message = "not found";
@@ -186,9 +187,9 @@ function doFindSensor(app: Express.Application){
   return (async function(req: Express.Request, res: Express.Response) {
     try {     
       const query = {...req.query, count : Number (req.query.count ?? DEFAULT_COUNT) +1 ,index : Number(req.query.index ?? DEFAULT_INDEX)};
-      const result = await app.locals.sensorsInfo.findSensors(query);
-      if (!result.isOk) throw result;
-      const response = pagedResult<Sensor>(req, 'id', result.val);
+      const resultFindSensor = await app.locals.sensorsInfo.findSensors(query);
+      if (!resultFindSensor.isOk) throw resultFindSensor;
+      const response = pagedResult<Sensor>(req, 'id', resultFindSensor.val);
       res.json(response);
     }
     catch(err){
@@ -202,9 +203,9 @@ function doFindSensor(app: Express.Application){
 function doCreateSensorReading(app: Express.Application ){
   return (async function(req: Express.Request, res: Express.Response) {
     try {     
-      const result =await app.locals.sensorsInfo.addSensorReading(req.body);
-      if(!result.isOk) throw result;
-      const sensorTypeCreated = result.val;
+      const resultAddSensor =await app.locals.sensorsInfo.addSensorReading(req.body);
+      if(!resultAddSensor.isOk) throw resultAddSensor;
+      const sensorTypeCreated = resultAddSensor.val;
       const { sensorId } = sensorTypeCreated;
       res.location(selfHref(req, sensorId));
       const response =
@@ -221,11 +222,13 @@ function doCreateSensorReading(app: Express.Application ){
 
 function doFindSensorReading(app: Express.Application){
   return (async function(req: Express.Request, res: Express.Response) {
-    try {     
+    try {
       const query = {...req.query, count : Number (req.query.count ?? DEFAULT_COUNT) +1 ,index : Number(req.query.index ?? DEFAULT_INDEX)};
-      const result = await app.locals.sensorsInfo.findSensorReadings(query);
-      if (!result.isOk) throw result;
-      const response = pagedResult<SensorReading>(req, 'sensorId', result.val);
+      const resultFindSensor = await app.locals.sensorsInfo.findSensorReadings(query);
+      if (!resultFindSensor.isOk) throw resultFindSensor;
+      const {isOk,status,links, result} = pagedResult<SensorReading>(req,'sensorId', resultFindSensor.val);
+      result.map(x=>x.links.self = links.self);
+      const response = {isOk,status,links, result};
       res.json(response);
     }
     catch(err){
