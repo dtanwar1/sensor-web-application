@@ -104,7 +104,19 @@ async function addData<T>(url: URL, data: Record<string, string>,
 			  displayFn: (t: T) => Record<string, string>)
   : Promise<Errors.Result<Record<string, string>>>
 {
-  return Errors.errResult('TODO');
+  try{
+    const res = await
+    (await fetch(url, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      body: JSON.stringify(data),
+    })).json(); 
+    console.log(res);
+    if(!res.isOk) return  new Errors.ErrResult(res.errors);
+    return  Errors.okResult(displayFn(res.result));
+  }catch(err){
+    return  new Errors.ErrResult([ new Errors.Err(err.message ?? err.toString(), {code: 'UNKNOWN'}), ]);
+  }
 }
 
 /** a type representing scrollable results returned by find* services */
@@ -126,7 +138,18 @@ async function findData<T>(url: URL,
 			   displayFn: (t: T) => Record<string, string>)
   : Promise<Errors.Result<PagedValues>>
 {
-  return Errors.errResult('TODO');
+  try{
+  const result = await
+    (await fetch(url, {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json', },
+    })).json(); 
+    console.log(result);
+    if(!result.isOk) return  new Errors.ErrResult(result.errors);
+    return new Errors.OkResult(pagedValues<T>(result, displayFn));
+  }catch(err){
+    return  new Errors.ErrResult([ new Errors.Err(err.message ?? err.toString(), {code: 'UNKNOWN'}), ]);
+  }
 }
 
 /** Given a baseUrl and req, return a URL object which contains
@@ -166,5 +189,15 @@ function makeSensorDisplay(sensor: Sensor) : Record<string, string> {
     'Min Expected': sensor.expected.min.toString(),
     'Max Expected': sensor.expected.max.toString(),
   }
+}
+
+function pagedValues<T>(results: PagedEnvelope<T>,
+  displayFn: (t: T) => Record<string, string> ): PagedValues{
+
+  const {links, result} = results;
+  const values = result.map(r=>displayFn(r.result));
+  const next = links.next === undefined ? undefined : links.next.href;
+  const prev = links.prev === undefined ? undefined : links.prev.href; ;
+  return {values, next, prev};
 }
 
